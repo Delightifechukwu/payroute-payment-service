@@ -1,1 +1,27 @@
-spring.application.name=payroute-takehome
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/payroute}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    defer-datasource-initialization: true
+  flyway:
+    enabled: true
+  sql:
+    init:
+      mode: always
+
+
+payroute:
+  webhook:
+    secret: ${WEBHOOK_SECRET:dev_secret_change_me}
+  fx:
+    quote_ttl_seconds: ${FX_QUOTE_TTL_SECONDS:180}

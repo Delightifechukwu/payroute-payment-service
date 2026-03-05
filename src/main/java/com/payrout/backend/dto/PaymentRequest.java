@@ -1,4 +1,12 @@
 package com.payrout.backend.dto;
 
-public class PaymentRequest {
-}
+import java.math.BigDecimal;
+import java.util.UUID;
+
+public record PaymentRequest(
+        UUID senderAccountId,
+        UUID recipientAccountId,
+        String sourceCurrency,
+        String destinationCurrency,
+        BigDecimal sourceAmount
+) {}

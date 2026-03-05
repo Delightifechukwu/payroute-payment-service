@@ -1,0 +1,277 @@
+{
+  "info": {
+    "name": "PayRoute API",
+    "description": "Complete API collection for PayRoute cross-border payment system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Create Payment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Save reference for later use",
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    pm.environment.set('paymentReference', response.reference);",
+              "    pm.environment.set('providerReference', response.providerReference || '');",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"senderAccountId\": \"11111111-1111-1111-1111-111111111111\",\n  \"recipientAccountId\": \"22222222-2222-2222-2222-222222222222\",\n  \"sourceCurrency\": \"USD\",\n  \"destinationCurrency\": \"EUR\",\n  \"sourceAmount\": 100\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments"]
+        }
+      }
+    },
+    {
+      "name": "2. Get Payment Details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payments/{{paymentReference}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments", "{{paymentReference}}"]
+        }
+      }
+    },
+    {
+      "name": "3. List Payments (All)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payments?page=0&size=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments"],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. List Payments (Processing Only)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/payments?status=PROCESSING&page=0&size=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments"],
+          "query": [
+            {
+              "key": "status",
+              "value": "PROCESSING"
+            },
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Get All Balances",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/balances",
+          "host": ["{{baseUrl}}"],
+          "path": ["balances"]
+        }
+      }
+    },
+    {
+      "name": "6. Complete Payment (Webhook)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Calculate HMAC-SHA256 signature",
+              "const CryptoJS = require('crypto-js');",
+              "",
+              "// Get the raw body",
+              "const body = pm.request.body.raw;",
+              "",
+              "// Get secret from environment",
+              "const secret = pm.environment.get('webhookSecret') || 'dev_secret_change_me';",
+              "",
+              "// Calculate signature",
+              "const signature = CryptoJS.HmacSHA256(body, secret).toString(CryptoJS.enc.Hex);",
+              "",
+              "// Set the header",
+              "pm.request.headers.upsert({",
+              "    key: 'X-Webhook-Signature',",
+              "    value: signature",
+              "});",
+              "",
+              "console.log('Generated HMAC signature:', signature);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reference\": \"{{providerReference}}\",\n  \"status\": \"completed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/webhooks",
+          "host": ["{{baseUrl}}"],
+          "path": ["webhooks"]
+        }
+      }
+    },
+    {
+      "name": "7. Fail Payment (Webhook)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Calculate HMAC-SHA256 signature",
+              "const CryptoJS = require('crypto-js');",
+              "",
+              "// Get the raw body",
+              "const body = pm.request.body.raw;",
+              "",
+              "// Get secret from environment",
+              "const secret = pm.environment.get('webhookSecret') || 'dev_secret_change_me';",
+              "",
+              "// Calculate signature",
+              "const signature = CryptoJS.HmacSHA256(body, secret).toString(CryptoJS.enc.Hex);",
+              "",
+              "// Set the header",
+              "pm.request.headers.upsert({",
+              "    key: 'X-Webhook-Signature',",
+              "    value: signature",
+              "});",
+              "",
+              "console.log('Generated HMAC signature:', signature);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reference\": \"{{providerReference}}\",\n  \"status\": \"failed\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/webhooks",
+          "host": ["{{baseUrl}}"],
+          "path": ["webhooks"]
+        }
+      }
+    },
+    {
+      "name": "8. Test Idempotency",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// This should return the same result as the first request",
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Returns same reference', function() {",
+              "    const response = pm.response.json();",
+              "    const savedRef = pm.environment.get('idempotencyTestRef');",
+              "    if (savedRef) {",
+              "        pm.expect(response.reference).to.equal(savedRef);",
+              "    } else {",
+              "        pm.environment.set('idempotencyTestRef', response.reference);",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "test-idempotency-key-123"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"senderAccountId\": \"11111111-1111-1111-1111-111111111111\",\n  \"recipientAccountId\": \"22222222-2222-2222-2222-222222222222\",\n  \"sourceCurrency\": \"USD\",\n  \"destinationCurrency\": \"EUR\",\n  \"sourceAmount\": 50\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "webhookSecret",
+      "value": "dev_secret_change_me"
+    }
+  ]
+}
