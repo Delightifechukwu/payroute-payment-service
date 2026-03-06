@@ -87,7 +87,38 @@ export default function NewPayment() {
             const res = await createPayment(formData, crypto.randomUUID());
             setResult(res.data);
         } catch (err) {
-            setError(err.response?.data?.message || err.message || "Payment failed");
+            console.error("Payment error:", err);
+
+            // Extract detailed error message
+            let errorMsg = "Payment failed";
+
+            if (err.response) {
+                // Backend returned an error response
+                const data = err.response.data;
+
+                if (typeof data === 'string') {
+                    errorMsg = data;
+                } else if (data.message) {
+                    errorMsg = data.message;
+                } else if (data.error) {
+                    errorMsg = data.error;
+                } else {
+                    errorMsg = `Error ${err.response.status}: ${err.response.statusText}`;
+                }
+
+                // Add more context
+                if (err.response.status === 500) {
+                    errorMsg = `Server Error: ${errorMsg}`;
+                } else if (err.response.status === 400) {
+                    errorMsg = `Validation Error: ${errorMsg}`;
+                }
+            } else if (err.request) {
+                errorMsg = "Cannot connect to backend. Please ensure the backend is running on http://localhost:8080";
+            } else {
+                errorMsg = err.message || "Unknown error occurred";
+            }
+
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -255,13 +286,45 @@ export default function NewPayment() {
                 <div
                     style={{
                         marginTop: "20px",
-                        padding: "10px",
+                        padding: "15px",
                         background: "#ffebee",
                         color: "#c62828",
-                        borderRadius: "4px",
+                        borderRadius: "8px",
+                        border: "2px solid #ef5350",
+                        boxShadow: "0 2px 8px rgba(244,67,54,0.2)",
                     }}
                 >
-                    Error: {error}
+                    <div style={{
+                        fontSize: "18px",
+                        fontWeight: "bold",
+                        marginBottom: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px"
+                    }}>
+                        <span style={{ fontSize: "24px" }}>⚠️</span>
+                        Payment Error
+                    </div>
+                    <div style={{
+                        fontSize: "14px",
+                        lineHeight: "1.6",
+                        background: "white",
+                        padding: "10px",
+                        borderRadius: "4px",
+                        fontFamily: "monospace",
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word"
+                    }}>
+                        {error}
+                    </div>
+                    <div style={{
+                        marginTop: "10px",
+                        fontSize: "12px",
+                        fontStyle: "italic",
+                        opacity: 0.8
+                    }}>
+                        💡 Tip: Check the browser console (F12) for more details
+                    </div>
                 </div>
             )}
 
