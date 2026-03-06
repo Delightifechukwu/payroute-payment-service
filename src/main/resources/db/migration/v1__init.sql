@@ -120,12 +120,3 @@ CREATE TABLE idempotency_records (
                                      created_at TIMESTAMP NOT NULL DEFAULT now(),
                                      CONSTRAINT uq_idempo_endpoint_key UNIQUE (endpoint, idem_key)
 );
-
--- Seed: example ledger accounts for NGN + USD (expand as needed)
-INSERT INTO ledger_accounts(code, currency, type) VALUES
-                                                      ('CUST_AVAILABLE','NGN','LIABILITY'),
-                                                      ('CUST_LOCKED','NGN','LIABILITY'),
-                                                      ('CUST_AVAILABLE','USD','LIABILITY'),
-                                                      ('CUST_LOCKED','USD','LIABILITY'),
-                                                      ('PROVIDER_CLEARING','NGN','ASSET'),
-                                                      ('PROVIDER_CLEARING','USD','ASSET');
