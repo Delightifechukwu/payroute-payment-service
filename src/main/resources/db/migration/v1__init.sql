@@ -1,17 +1,10 @@
 -- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Accounts
-CREATE TABLE accounts (
-                          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                          name TEXT NOT NULL,
-                          created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
 -- Multi-currency balances (available + locked)
 CREATE TABLE account_balances (
                                   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                                  account_id UUID NOT NULL REFERENCES accounts(id),
+                                  account_id UUID NOT NULL,
                                   currency TEXT NOT NULL,
                                   available NUMERIC(18,2) NOT NULL CHECK (available >= 0),
                                   locked NUMERIC(18,2) NOT NULL CHECK (locked >= 0),
@@ -36,8 +29,8 @@ CREATE INDEX idx_fx_pair ON fx_quotes(base_currency, quote_currency);
 CREATE TABLE transactions (
                               id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                               reference TEXT NOT NULL UNIQUE,
-                              sender_account_id UUID NOT NULL REFERENCES accounts(id),
-                              recipient_account_id UUID NOT NULL REFERENCES accounts(id),
+                              sender_account_id UUID NOT NULL,
+                              recipient_account_id UUID NOT NULL,
 
                               source_currency TEXT NOT NULL,
                               destination_currency TEXT NOT NULL,

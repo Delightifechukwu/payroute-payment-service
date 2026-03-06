@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { createPayment } from "../api/client";
+import { useState, useEffect } from "react";
+import { createPayment, getBalances } from "../api/client";
 
 export default function NewPayment() {
     const [formData, setFormData] = useState({
-        senderAccountId: "11111111-1111-1111-1111-111111111111",
-        recipientAccountId: "22222222-2222-2222-2222-222222222222",
+        senderAccountId: "",
+        recipientAccountId: "",
         sourceCurrency: "USD",
         destinationCurrency: "EUR",
         sourceAmount: 100,
@@ -14,6 +14,41 @@ export default function NewPayment() {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [fxPreview, setFxPreview] = useState(null);
+    const [accounts, setAccounts] = useState([]);
+    const [groupedAccounts, setGroupedAccounts] = useState({});
+
+    useEffect(() => {
+        loadAccounts();
+    }, []);
+
+    const loadAccounts = async () => {
+        try {
+            const res = await getBalances();
+            setAccounts(res.data);
+
+            // Group balances by account ID
+            const grouped = res.data.reduce((acc, balance) => {
+                if (!acc[balance.accountId]) {
+                    acc[balance.accountId] = [];
+                }
+                acc[balance.accountId].push(balance);
+                return acc;
+            }, {});
+            setGroupedAccounts(grouped);
+
+            // Set default accounts
+            const accountIds = Object.keys(grouped);
+            if (accountIds.length >= 2) {
+                setFormData(prev => ({
+                    ...prev,
+                    senderAccountId: accountIds[0],
+                    recipientAccountId: accountIds[1]
+                }));
+            }
+        } catch (err) {
+            console.error("Failed to load accounts:", err);
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -25,21 +60,21 @@ export default function NewPayment() {
     };
 
     const calculateFxPreview = (data) => {
-        const rates = {
-            USD: 0.00065,
-            EUR: 0.00060,
-            GBP: 0.00052,
-        };
+        let rate = 1.0;
 
-        if (data.sourceCurrency === "NGN") {
-            const rate = rates[data.destinationCurrency] || 0.0005;
-            const destAmount = (data.sourceAmount * rate).toFixed(2);
-            setFxPreview({ rate, destAmount });
-        } else if (data.sourceCurrency === "USD" && data.destinationCurrency === "EUR") {
-            setFxPreview({ rate: 0.92, destAmount: (data.sourceAmount * 0.92).toFixed(2) });
-        } else {
-            setFxPreview({ rate: 1, destAmount: data.sourceAmount });
+        // Match backend FxService rates
+        if (data.sourceCurrency === "USD") {
+            if (data.destinationCurrency === "EUR") rate = 0.92;
+            else if (data.destinationCurrency === "GBP") rate = 0.79;
+            else if (data.destinationCurrency === "NGN") rate = 1580.0;
+        } else if (data.sourceCurrency === "NGN") {
+            if (data.destinationCurrency === "USD") rate = 0.00063;
+            else if (data.destinationCurrency === "EUR") rate = 0.00058;
+            else if (data.destinationCurrency === "GBP") rate = 0.00050;
         }
+
+        const destAmount = (data.sourceAmount * rate).toFixed(2);
+        setFxPreview({ rate, destAmount });
     };
 
     const submit = async (e) => {
@@ -72,10 +107,18 @@ export default function NewPayment() {
                         value={formData.senderAccountId}
                         onChange={handleChange}
                         style={{ width: "100%", padding: "8px" }}
+                        required
                     >
-                        <option value="11111111-1111-1111-1111-111111111111">
-                            Sender Account (USD/NGN)
-                        </option>
+                        <option value="">Select sender account</option>
+                        {Object.entries(groupedAccounts).map(([accountId, balances]) => {
+                            const currencies = balances.map(b => b.currency).join(", ");
+                            const totalAvailable = balances.reduce((sum, b) => sum + b.available, 0);
+                            return (
+                                <option key={accountId} value={accountId}>
+                                    {accountId.slice(0, 8)}... - Currencies: {currencies} - Available: {totalAvailable.toLocaleString()}
+                                </option>
+                            );
+                        })}
                     </select>
                 </div>
 
@@ -88,10 +131,18 @@ export default function NewPayment() {
                         value={formData.recipientAccountId}
                         onChange={handleChange}
                         style={{ width: "100%", padding: "8px" }}
+                        required
                     >
-                        <option value="22222222-2222-2222-2222-222222222222">
-                            Recipient Account (EUR/USD)
-                        </option>
+                        <option value="">Select recipient account</option>
+                        {Object.entries(groupedAccounts).map(([accountId, balances]) => {
+                            const currencies = balances.map(b => b.currency).join(", ");
+                            const totalAvailable = balances.reduce((sum, b) => sum + b.available, 0);
+                            return (
+                                <option key={accountId} value={accountId}>
+                                    {accountId.slice(0, 8)}... - Currencies: {currencies} - Available: {totalAvailable.toLocaleString()}
+                                </option>
+                            );
+                        })}
                     </select>
                 </div>
 
@@ -170,12 +221,30 @@ export default function NewPayment() {
                     disabled={loading}
                     style={{
                         width: "100%",
-                        padding: "10px",
-                        background: loading ? "#ccc" : "#007bff",
+                        padding: "12px 20px",
+                        background: loading ? "#ccc" : "#6a0dad",
                         color: "white",
                         border: "none",
-                        borderRadius: "4px",
+                        borderRadius: "6px",
                         cursor: loading ? "not-allowed" : "pointer",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        boxShadow: loading ? "none" : "0 2px 4px rgba(106,13,173,0.3)",
+                        transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!loading) {
+                            e.target.style.background = "#5a0a9d";
+                            e.target.style.transform = "translateY(-1px)";
+                            e.target.style.boxShadow = "0 4px 8px rgba(106,13,173,0.4)";
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!loading) {
+                            e.target.style.background = "#6a0dad";
+                            e.target.style.transform = "translateY(0)";
+                            e.target.style.boxShadow = "0 2px 4px rgba(106,13,173,0.3)";
+                        }
                     }}
                 >
                     {loading ? "Processing..." : "Create Payment"}

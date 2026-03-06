@@ -44,6 +44,49 @@ export default function Transactions() {
         }
     };
 
+    const simulateWebhook = async (transaction, status) => {
+        try {
+            const payload = JSON.stringify({
+                reference: transaction.providerReference,
+                status: status
+            });
+
+            // Calculate HMAC-SHA256 signature
+            const secret = "dev_secret_change_me";
+            const encoder = new TextEncoder();
+            const keyData = encoder.encode(secret);
+            const messageData = encoder.encode(payload);
+
+            const cryptoKey = await crypto.subtle.importKey(
+                "raw",
+                keyData,
+                { name: "HMAC", hash: "SHA-256" },
+                false,
+                ["sign"]
+            );
+
+            const signatureBuffer = await crypto.subtle.sign(
+                "HMAC",
+                cryptoKey,
+                messageData
+            );
+
+            const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+            const signatureHex = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            await axios.post("http://localhost:8080/webhooks", payload, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Webhook-Signature": signatureHex
+                }
+            });
+            await loadTransactions();
+        } catch (err) {
+            console.error("Failed to simulate webhook:", err);
+            alert("Failed to simulate webhook: " + (err.response?.data?.message || err.message));
+        }
+    };
+
     return (
         <div>
             <h2>Transactions</h2>
@@ -92,6 +135,9 @@ export default function Transactions() {
                         </th>
                         <th style={{ padding: "10px", border: "1px solid #ddd" }}>
                             Created
+                        </th>
+                        <th style={{ padding: "10px", border: "1px solid #ddd" }}>
+                            Actions
                         </th>
                     </tr>
                 </thead>
@@ -155,6 +201,47 @@ export default function Transactions() {
                                 }}
                             >
                                 {new Date(t.createdAt).toLocaleString()}
+                            </td>
+                            <td
+                                style={{
+                                    padding: "10px",
+                                    border: "1px solid #ddd",
+                                    textAlign: "center",
+                                }}
+                            >
+                                {t.status === "PROCESSING" && (
+                                    <>
+                                        <button
+                                            onClick={() => simulateWebhook(t, "completed")}
+                                            style={{
+                                                padding: "4px 8px",
+                                                background: "#4caf50",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: "4px",
+                                                cursor: "pointer",
+                                                fontSize: "11px",
+                                                marginRight: "5px"
+                                            }}
+                                        >
+                                            Complete
+                                        </button>
+                                        <button
+                                            onClick={() => simulateWebhook(t, "failed")}
+                                            style={{
+                                                padding: "4px 8px",
+                                                background: "#f44336",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: "4px",
+                                                cursor: "pointer",
+                                                fontSize: "11px"
+                                            }}
+                                        >
+                                            Fail
+                                        </button>
+                                    </>
+                                )}
                             </td>
                         </tr>
                     ))}

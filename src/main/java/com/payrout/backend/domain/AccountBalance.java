@@ -15,9 +15,10 @@ import java.util.UUID;
 public class AccountBalance {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @Column(name="account_id", nullable=false)
+    @Column(name = "account_id", nullable = false)
     private UUID accountId;
 
     @Column(nullable=false)

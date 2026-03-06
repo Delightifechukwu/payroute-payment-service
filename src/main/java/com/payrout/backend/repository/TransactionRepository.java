@@ -17,8 +17,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     @Query("SELECT t FROM Transaction t WHERE " +
             "(:status IS NULL OR t.status = :status) AND " +
-            "(:startDate IS NULL OR t.createdAt >= :startDate) AND " +
-            "(:endDate IS NULL OR t.createdAt <= :endDate)")
+            "(CAST(:startDate AS timestamp) IS NULL OR t.createdAt >= :startDate) AND " +
+            "(CAST(:endDate AS timestamp) IS NULL OR t.createdAt <= :endDate)")
     Page<Transaction> findWithFilters(@Param("status") String status,
                                       @Param("startDate") Instant startDate,
                                       @Param("endDate") Instant endDate,

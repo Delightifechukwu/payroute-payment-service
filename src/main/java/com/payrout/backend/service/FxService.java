@@ -22,19 +22,33 @@ public class FxService {
     }
 
     public FxQuote createQuote(String base, String quote) {
-        // Simulate: NGN->USD/GBP/EUR etc. Keep deterministic for tests.
-        BigDecimal rate = switch (quote) {
-            case "USD" -> new BigDecimal("0.00065");
-            case "EUR" -> new BigDecimal("0.00060");
-            case "GBP" -> new BigDecimal("0.00052");
-            default -> new BigDecimal("0.00050");
-        };
+        // Simulate realistic FX rates based on base currency
+        BigDecimal rate;
+
+        if ("USD".equals(base)) {
+            rate = switch (quote) {
+                case "EUR" -> new BigDecimal("0.92");
+                case "GBP" -> new BigDecimal("0.79");
+                case "NGN" -> new BigDecimal("1580.00");
+                default -> new BigDecimal("1.0");
+            };
+        } else if ("NGN".equals(base)) {
+            rate = switch (quote) {
+                case "USD" -> new BigDecimal("0.00063");
+                case "EUR" -> new BigDecimal("0.00058");
+                case "GBP" -> new BigDecimal("0.00050");
+                default -> new BigDecimal("1.0");
+            };
+        } else {
+            rate = new BigDecimal("1.0");
+        }
 
         FxQuote q = new FxQuote();
         q.setId(UUID.randomUUID());
         q.setBaseCurrency(base);
         q.setQuoteCurrency(quote);
         q.setRate(rate);
+        q.setStatus("LOCKED");
         q.setExpiresAt(Instant.now().plusSeconds(ttlSeconds));
         q.setCreatedAt(Instant.now());
         q.setLockedAt(Instant.now());

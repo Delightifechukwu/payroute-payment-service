@@ -23,6 +23,7 @@ public class FxQuote {
     @Column(name = "quote_currency")
     private String quoteCurrency;
 
+    @Column(precision = 18, scale = 8)
     private BigDecimal rate;
 
     @Column(name = "created_at")
