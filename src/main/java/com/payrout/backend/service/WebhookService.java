@@ -176,14 +176,21 @@ public class WebhookService {
                 tx.getDestinationCurrency(), tx.getDestinationAmount());
 
         // Update sender balance: locked -> 0
-        AccountBalance senderBal = balanceRepo.findById(tx.getSenderAccountId())
+        AccountBalance senderBal = balanceRepo.lockByAccountAndCurrency(tx.getSenderAccountId(), tx.getSourceCurrency())
                 .orElseThrow(() -> new IllegalStateException("Sender balance not found"));
         senderBal.setLocked(senderBal.getLocked().subtract(tx.getSourceAmount()));
         balanceRepo.save(senderBal);
 
-        // Update recipient balance: available += destination amount
+        // Update recipient balance: available += destination amount (create row if first time receiving this currency)
         AccountBalance recipientBal = balanceRepo.lockByAccountAndCurrency(tx.getRecipientAccountId(), tx.getDestinationCurrency())
-                .orElseThrow(() -> new IllegalStateException("Recipient balance not found"));
+                .orElseGet(() -> {
+                    AccountBalance newBal = new AccountBalance();
+                    newBal.setAccountId(tx.getRecipientAccountId());
+                    newBal.setCurrency(tx.getDestinationCurrency());
+                    newBal.setAvailable(java.math.BigDecimal.ZERO);
+                    newBal.setLocked(java.math.BigDecimal.ZERO);
+                    return newBal;
+                });
         recipientBal.setAvailable(recipientBal.getAvailable().add(tx.getDestinationAmount()));
         balanceRepo.save(recipientBal);
     }

@@ -82,7 +82,7 @@ class WebhookServiceTest {
         recipientBalance.setAvailable(new BigDecimal("50.00"));
 
         when(txRepo.findByProviderReference(providerRef)).thenReturn(Optional.of(tx));
-        when(balanceRepo.findById(tx.getSenderAccountId())).thenReturn(Optional.of(senderBalance));
+        when(balanceRepo.lockByAccountAndCurrency(tx.getSenderAccountId(), "USD")).thenReturn(Optional.of(senderBalance));
         when(balanceRepo.lockByAccountAndCurrency(tx.getRecipientAccountId(), "EUR"))
                 .thenReturn(Optional.of(recipientBalance));
         when(webhookRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

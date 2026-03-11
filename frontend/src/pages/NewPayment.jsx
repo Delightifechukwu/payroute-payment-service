@@ -340,10 +340,73 @@ export default function NewPayment() {
                     <h4>Payment Created Successfully!</h4>
                     <div>Reference: {result.reference}</div>
                     <div>Status: {result.status}</div>
+                    <div>Provider Reference: {result.providerReference}</div>
                     <div>
                         Amount: {result.sourceAmount} → {result.destinationAmount}
                     </div>
                     <div>FX Rate: {result.fxRate}</div>
+
+                    {result.status === "PROCESSING" && result.providerReference && (
+                        <div style={{
+                            marginTop: "15px",
+                            padding: "15px",
+                            background: "#fff3e0",
+                            borderRadius: "6px",
+                            border: "1px dashed #ff9800"
+                        }}>
+                            <p style={{ margin: "0 0 10px 0", fontSize: "14px", color: "#e65100" }}>
+                                <strong>🔄 Payment waiting for confirmation</strong>
+                            </p>
+                            <p style={{ margin: "0 0 15px 0", fontSize: "12px", color: "#666" }}>
+                                Simulate webhook (in production, provider sends automatically):
+                            </p>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await fetch(`http://localhost:8080/test/complete-payment/${result.providerReference}`, {method: 'POST'});
+                                        alert("✅ Payment completed!");
+                                        window.location.reload();
+                                    } catch (err) {
+                                        alert("Error: " + err.message);
+                                    }
+                                }}
+                                style={{
+                                    padding: "10px 20px",
+                                    background: "#4caf50",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    marginRight: "10px",
+                                    fontWeight: "600"
+                                }}
+                            >
+                                ✅ Complete Payment
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await fetch(`http://localhost:8080/test/fail-payment/${result.providerReference}`, {method: 'POST'});
+                                        alert("❌ Payment failed! Money returned.");
+                                        window.location.reload();
+                                    } catch (err) {
+                                        alert("Error: " + err.message);
+                                    }
+                                }}
+                                style={{
+                                    padding: "10px 20px",
+                                    background: "#f44336",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    fontWeight: "600"
+                                }}
+                            >
+                                ❌ Fail Payment
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

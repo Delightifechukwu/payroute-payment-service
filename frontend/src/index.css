@@ -83,9 +83,18 @@ nav a{
 /* Select dropdowns */
 select {
   accent-color: #6a0dad;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+select:hover {
+  border-color: #b39ddb;
+  outline: 2px solid #e0d4f5;
+  outline-offset: 1px;
 }
 
 select:focus {
   outline: 2px solid #6a0dad;
   outline-offset: 2px;
+  border-color: #6a0dad;
 }

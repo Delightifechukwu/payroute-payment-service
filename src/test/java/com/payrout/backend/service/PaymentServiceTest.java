@@ -174,6 +174,7 @@ class PaymentServiceTest {
 
         PaymentResponse cachedResponse = new PaymentResponse(
                 "PR_cached",
+                "prov_cached",
                 "PROCESSING",
                 new BigDecimal("100.00"),
                 new BigDecimal("92.00"),

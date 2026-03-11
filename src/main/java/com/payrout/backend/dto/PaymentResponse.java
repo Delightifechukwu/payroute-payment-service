@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public record PaymentResponse(
         String reference,
+        String providerReference,
         String status,
         BigDecimal sourceAmount,
         BigDecimal destinationAmount,
@@ -16,6 +17,7 @@ public record PaymentResponse(
 
         return new PaymentResponse(
                 tx.getReference(),
+                tx.getProviderReference(),
                 tx.getStatus(),
                 tx.getSourceAmount(),
                 tx.getDestinationAmount(),
